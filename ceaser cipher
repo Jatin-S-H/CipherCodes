@@ -1,34 +1,139 @@
-name = input("Enter your name: ")
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 
-# Convert lowercase to uppercase
-name = name.upper()
-print("Lowercase letters (if any) have been converted to uppercase.")
+void trim(char s[])
+{
+    int start = 0;
+    int end = strlen(s) - 1;
 
-# Check name: allow only alphabets and spaces
-valid_name = True
+    while (s[start] == ' ')
+        start++;
 
-for ch in name:
-    if not (ch.isalpha() or ch == " "):
-        valid_name = False
-        break
+    while (end >= start && s[end] == ' ')
+        end--;
 
-if not valid_name:
-    print("Error: Numbers and special characters are not allowed in the name.")
-else:
-    key = input("Enter the key (n): ")
+    memmove(s, s + start, end - start + 1);
+    s[end - start + 1] = '\0';
+}
 
-    # Check key contains only numbers
-    if not key.isdigit():
-        print("Error: Key must contain only numbers.")
-    else:
-        n = int(key)
+int readShift(char input[], int *shift)
+{
+    int i;
 
-        cipher = ""
+    trim(input);
 
-        for ch in name:
-            if ch == " ":
-                cipher += " "
-            else:
-                cipher += chr((ord(ch) - ord('A') + n) % 26 + ord('A'))
+    if (input[0] == '\0')
+        return 0;
 
-        print("Cipher Text:", cipher)
+    for (i = 0; input[i] != '\0'; i++)
+    {
+        if (!isdigit((unsigned char)input[i]))
+            return 0;
+    }
+
+    sscanf(input, "%d", shift);
+
+    return 1;
+}
+
+void encrypt(char text[], char cipher[], int shift)
+{
+    int i;
+
+    for (i = 0; text[i] != '\0'; i++)
+    {
+        if (text[i] == ' ')
+        {
+            cipher[i] = ' ';
+        }
+        else if (isupper((unsigned char)text[i]))
+        {
+            cipher[i] = ((text[i] - 'A' + shift) % 26) + 'A';
+        }
+    }
+
+    cipher[i] = '\0';
+}
+
+void decrypt(char cipher[], char text[], int shift)
+{
+    int i;
+
+    for (i = 0; cipher[i] != '\0'; i++)
+    {
+        if (cipher[i] == ' ')
+        {
+            text[i] = ' ';
+        }
+        else if (isupper((unsigned char)cipher[i]))
+        {
+            text[i] = ((cipher[i] - 'A' - shift + 26) % 26) + 'A';
+        }
+    }
+
+    text[i] = '\0';
+}
+
+int main()
+{
+    char input[200], shiftInput[50];
+    char cipher[200], decrypted[200];
+    int shift;
+    int i;
+
+    printf("Enter plaintext: ");
+    fgets(input, sizeof(input), stdin);
+    input[strcspn(input, "\n")] = '\0';
+    trim(input);
+
+    /* Check plaintext */
+    if (input[0] == '\0')
+    {
+        printf("Plaintext cannot be empty.\n");
+        return 0;
+    }
+
+    /* Check plaintext characters */
+    for (i = 0; input[i] != '\0'; i++)
+    {
+        if (input[i] != ' ' && !isalpha((unsigned char)input[i]))
+        {
+            printf("Digits and special characters are not allowed in plaintext.\n");
+            return 0;
+        }
+
+        if (isalpha((unsigned char)input[i]))
+            input[i] = toupper((unsigned char)input[i]);
+    }
+
+    printf("Enter shift value: ");
+    fgets(shiftInput, sizeof(shiftInput), stdin);
+    shiftInput[strcspn(shiftInput, "\n")] = '\0';
+
+    /* Check shift */
+    if (!readShift(shiftInput, &shift))
+    {
+        printf("Error: Shift value must contain only numbers.\n");
+        return 0;
+    }
+
+    if (shift < 0)
+    {
+        printf("Error: Shift value cannot be negative.\n");
+        return 0;
+    }
+
+    shift = shift % 26;
+
+    /* Encryption */
+    encrypt(input, cipher, shift);
+
+    /* Decryption */
+    decrypt(cipher, decrypted, shift);
+
+    printf("\nCiphertext: %s\n", cipher);
+    printf("Decrypted Text: %s\n", decrypted);
+
+    return 0;
+}
