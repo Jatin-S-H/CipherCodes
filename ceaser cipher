@@ -1,0 +1,34 @@
+name = input("Enter your name: ")
+
+# Convert lowercase to uppercase
+name = name.upper()
+print("Lowercase letters (if any) have been converted to uppercase.")
+
+# Check name: allow only alphabets and spaces
+valid_name = True
+
+for ch in name:
+    if not (ch.isalpha() or ch == " "):
+        valid_name = False
+        break
+
+if not valid_name:
+    print("Error: Numbers and special characters are not allowed in the name.")
+else:
+    key = input("Enter the key (n): ")
+
+    # Check key contains only numbers
+    if not key.isdigit():
+        print("Error: Key must contain only numbers.")
+    else:
+        n = int(key)
+
+        cipher = ""
+
+        for ch in name:
+            if ch == " ":
+                cipher += " "
+            else:
+                cipher += chr((ord(ch) - ord('A') + n) % 26 + ord('A'))
+
+        print("Cipher Text:", cipher)
