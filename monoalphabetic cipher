@@ -2,9 +2,12 @@
 #include <string.h>
 #include <ctype.h>
 
+#define KEY "QWERTYUIOPASDFGHJKLZXCVBNM"
+
 void trim(char s[])
 {
-    int start = 0, end = strlen(s) - 1;
+    int start = 0;
+    int end = strlen(s) - 1;
 
     while (s[start] == ' ')
         start++;
@@ -16,22 +19,59 @@ void trim(char s[])
     s[end - start + 1] = '\0';
 }
 
+void encrypt(char text[], char cipher[])
+{
+    int i;
+
+    for (i = 0; text[i] != '\0'; i++)
+    {
+        if (text[i] == ' ')
+            cipher[i] = ' ';
+        else
+            cipher[i] = KEY[text[i] - 'A'];
+    }
+
+    cipher[i] = '\0';
+}
+
+void decrypt(char cipher[], char text[])
+{
+    int i, j;
+
+    for (i = 0; cipher[i] != '\0'; i++)
+    {
+        if (cipher[i] == ' ')
+        {
+            text[i] = ' ';
+        }
+        else
+        {
+            for (j = 0; j < 26; j++)
+            {
+                if (KEY[j] == cipher[i])
+                {
+                    text[i] = 'A' + j;
+                    break;
+                }
+            }
+        }
+    }
+
+    text[i] = '\0';
+}
+
 int main()
 {
-    char input[200], key[100];
+    char input[200];
     char cipher[200], decrypted[200];
-    int i, j;
-    int used[26] = {0};
+    int i;
+
+    printf("Substitution Key: %s\n", KEY);
 
     printf("Enter plaintext: ");
     fgets(input, sizeof(input), stdin);
     input[strcspn(input, "\n")] = '\0';
     trim(input);
-
-    printf("Enter 26-letter substitution key: ");
-    fgets(key, sizeof(key), stdin);
-    key[strcspn(key, "\n")] = '\0';
-    trim(key);
 
     /* Check plaintext */
     if (input[0] == '\0')
@@ -40,6 +80,7 @@ int main()
         return 0;
     }
 
+    /* Check plaintext characters */
     for (i = 0; input[i] != '\0'; i++)
     {
         if (input[i] != ' ' && !isalpha((unsigned char)input[i]))
@@ -52,69 +93,11 @@ int main()
             input[i] = toupper((unsigned char)input[i]);
     }
 
-    /* Check key length */
-    if (strlen(key) != 26)
-    {
-        printf("Key must contain exactly 26 letters.\n");
-        return 0;
-    }
-
-    /* Check key */
-    for (i = 0; i < 26; i++)
-    {
-        if (!isalpha((unsigned char)key[i]))
-        {
-            printf("Digits, spaces and special characters are not allowed in the key.\n");
-            return 0;
-        }
-
-        key[i] = toupper((unsigned char)key[i]);
-
-        if (used[key[i] - 'A'])
-        {
-            printf("Key must contain 26 unique letters.\n");
-            return 0;
-        }
-
-        used[key[i] - 'A'] = 1;
-    }
-
     /* Encryption */
-    for (i = 0; input[i] != '\0'; i++)
-    {
-        if (input[i] == ' ')
-        {
-            cipher[i] = ' ';
-        }
-        else
-        {
-            cipher[i] = key[input[i] - 'A'];
-        }
-    }
-
-    cipher[i] = '\0';
+    encrypt(input, cipher);
 
     /* Decryption */
-    for (i = 0; cipher[i] != '\0'; i++)
-    {
-        if (cipher[i] == ' ')
-        {
-            decrypted[i] = ' ';
-        }
-        else
-        {
-            for (j = 0; j < 26; j++)
-            {
-                if (key[j] == cipher[i])
-                {
-                    decrypted[i] = 'A' + j;
-                    break;
-                }
-            }
-        }
-    }
-
-    decrypted[i] = '\0';
+    decrypt(cipher, decrypted);
 
     printf("\nCiphertext: %s\n", cipher);
     printf("Decrypted Text: %s\n", decrypted);
