@@ -1,0 +1,212 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+void trim(char s[])
+{
+    int start = 0, end = strlen(s) - 1;
+
+    while (s[start] == ' ')
+        start++;
+
+    while (end >= start && s[end] == ' ')
+        end--;
+
+    memmove(s, s + start, end - start + 1);
+    s[end - start + 1] = '\0';
+}
+
+void getOrder(char key[], int order[])
+{
+    int len = strlen(key);
+    int i, j;
+
+    for (i = 0; i < len; i++)
+    {
+        order[i] = 1;
+
+        for (j = 0; j < len; j++)
+        {
+            if (key[j] < key[i])
+                order[i]++;
+            else if (key[j] == key[i] && j < i)
+                order[i]++;
+        }
+    }
+}
+
+void columnarEncrypt(char text[], char key[], char result[])
+{
+    int len = strlen(text);
+    int cols = strlen(key);
+    int rows = (len + cols - 1) / cols;
+    int order[100];
+    int i, j, r, k = 0;
+
+    getOrder(key, order);
+
+    /* Read columns according to key order */
+    for (i = 1; i <= cols; i++)
+    {
+        for (j = 0; j < cols; j++)
+        {
+            if (order[j] == i)
+            {
+                for (r = 0; r < rows; r++)
+                {
+                    int position = r * cols + j;
+
+                    if (position < len)
+                        result[k++] = text[position];
+                }
+            }
+        }
+    }
+
+    result[k] = '\0';
+}
+
+void columnarDecrypt(char cipher[], char key[], char result[])
+{
+    int len = strlen(cipher);
+    int cols = strlen(key);
+    int rows = (len + cols - 1) / cols;
+    int order[100];
+    char matrix[100][200];
+    int columnLength[100];
+    int i, j, r, k = 0;
+
+    getOrder(key, order);
+
+    /* Calculate number of characters in every column */
+    for (j = 0; j < cols; j++)
+    {
+        columnLength[j] = 0;
+
+        for (r = 0; r < rows; r++)
+        {
+            if (r * cols + j < len)
+                columnLength[j]++;
+        }
+    }
+
+    /* Fill columns according to key order */
+    for (i = 1; i <= cols; i++)
+    {
+        for (j = 0; j < cols; j++)
+        {
+            if (order[j] == i)
+            {
+                for (r = 0; r < columnLength[j]; r++)
+                {
+                    matrix[r][j] = cipher[k++];
+                }
+            }
+        }
+    }
+
+    /* Read matrix row by row */
+    k = 0;
+
+    for (r = 0; r < rows; r++)
+    {
+        for (j = 0; j < cols; j++)
+        {
+            if (r < columnLength[j])
+                result[k++] = matrix[r][j];
+        }
+    }
+
+    result[k] = '\0';
+}
+
+int validateKey(char key[])
+{
+    int i;
+
+    if (key[0] == '\0')
+    {
+        printf("Key cannot be empty.\n");
+        return 0;
+    }
+
+    for (i = 0; key[i] != '\0'; i++)
+    {
+        if (!isalpha((unsigned char)key[i]))
+        {
+            printf("Digits, spaces and special characters are not allowed in the key.\n");
+            return 0;
+        }
+
+        key[i] = toupper((unsigned char)key[i]);
+    }
+
+    return 1;
+}
+
+int main()
+{
+    char input[200];
+    char key1[100], key2[100];
+    char firstCipher[200];
+    char finalCipher[200];
+    char secondDecrypted[200];
+    char decrypted[200];
+    int i;
+
+    printf("Enter plaintext: ");
+    fgets(input, sizeof(input), stdin);
+    input[strcspn(input, "\n")] = '\0';
+    trim(input);
+
+    /* Check plaintext */
+    if (input[0] == '\0')
+    {
+        printf("Plaintext cannot be empty.\n");
+        return 0;
+    }
+
+    for (i = 0; input[i] != '\0'; i++)
+    {
+        if (input[i] != ' ' && !isalpha((unsigned char)input[i]))
+        {
+            printf("Digits and special characters are not allowed in plaintext.\n");
+            return 0;
+        }
+
+        if (isalpha((unsigned char)input[i]))
+            input[i] = toupper((unsigned char)input[i]);
+    }
+
+    printf("Enter first key: ");
+    fgets(key1, sizeof(key1), stdin);
+    key1[strcspn(key1, "\n")] = '\0';
+    trim(key1);
+
+    if (!validateKey(key1))
+        return 0;
+
+    printf("Enter second key: ");
+    fgets(key2, sizeof(key2), stdin);
+    key2[strcspn(key2, "\n")] = '\0';
+    trim(key2);
+
+    if (!validateKey(key2))
+        return 0;
+
+    /* First columnar transposition */
+    columnarEncrypt(input, key1, firstCipher);
+
+    /* Second columnar transposition */
+    columnarEncrypt(firstCipher, key2, finalCipher);
+
+    /* Decryption in reverse order */
+    columnarDecrypt(finalCipher, key2, secondDecrypted);
+    columnarDecrypt(secondDecrypted, key1, decrypted);
+
+    printf("\nFirst Transposition: %s\n", firstCipher);
+    printf("Ciphertext: %s\n", finalCipher);
+    printf("Decrypted Text: %s\n", decrypted);
+
+    return 0;
+}
